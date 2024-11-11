@@ -1,4 +1,5 @@
 <script setup>
+import { usePendulumStore } from '@/stores/pendulum'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useTheme } from 'vuetify'
 
@@ -7,18 +8,18 @@ const canvas = ref(null)
 const animationLoop = ref(null)
 const theme = useTheme()
 
-const displayAreaSize = ref(2)
+const pendulum = usePendulumStore()
+
+const displayAreaSize = computed(
+    () => 2 * (pendulum.links + 1) * pendulum.armLength
+)
 const scale = computed(
     () => Math.min(props.height, props.height) / displayAreaSize.value
 ) // pixels per meter
 
-const pendulumLength = ref(5)
-const pendulumArmLength = ref(0.1)
-const pendulumState = ref([0, 0, 0, 0, 0])
-
 onMounted(() => {
-    const animate = () => {
-        render()
+    const animate = (timestamp) => {
+        render(timestamp)
 
         animationLoop.value = requestAnimationFrame(animate)
     }
@@ -40,7 +41,7 @@ const translateLength = (length) => {
     return length * scale.value
 }
 
-const renderCircle = (x, y, radius, ctx) => {
+const renderCircle = ([x, y], radius, ctx) => {
     const [renderX, renderY] = translateCoordinates([x, y])
     const renderRadius = translateLength(radius)
 
@@ -67,31 +68,20 @@ const renderLine = (point1, point2, width, ctx) => {
     ctx.stroke()
 }
 
-const render = () => {
+const render = (timestamp) => {
     const ctx = canvas.value.getContext('2d')
 
     ctx.clearRect(0, 0, canvas.value.width, canvas.value.height)
 
     // render pendulum
-    let x = 0
-    let y = 0
-
-    for (const theta of pendulumState.value) {
-        const prevX = x
-        const prevY = y
-
-        x += Math.sin(theta) * pendulumArmLength.value
-        y += Math.cos(theta) * pendulumArmLength.value
-
-        renderLine([prevX, prevY], [x, y], 0.01, ctx)
-        renderCircle(prevX, prevY, 0.02, ctx)
+    for (let i = 1; i < pendulum.position.length; i++) {
+        renderLine(pendulum.position[i - 1], pendulum.position[i], 0.01, ctx)
+        renderCircle(pendulum.position[i - 1], 0.02, ctx)
     }
-    renderCircle(x, y, 0.02, ctx)
+    renderCircle(pendulum.position[pendulum.position.length - 1], 0.02, ctx)
 
     // updating test
-    pendulumState.value = pendulumState.value.map(
-        (theta, i) => theta + 0.01 * (i + 1)
-    )
+    pendulum.tick(timestamp)
 }
 </script>
 <template>
