@@ -14,6 +14,9 @@ importers:
       core-js:
         specifier: ^3.37.1
         version: 3.39.0
+      konva:
+        specifier: ^9.3.16
+        version: 9.3.16
       pinia:
         specifier: ^2.2.6
         version: 2.2.6(vue@3.5.12)
@@ -23,6 +26,9 @@ importers:
       vue:
         specifier: ^3.4.31
         version: 3.5.12
+      vue-konva:
+        specifier: ^3.1.2
+        version: 3.1.2(konva@9.3.16)(vue@3.5.12)
       vuetify:
         specifier: ^3.6.11
         version: 3.7.4(vite-plugin-vuetify@2.0.4)(vue@3.5.12)
@@ -1070,6 +1076,9 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
+  konva@9.3.16:
+    resolution: {integrity: sha512-qa47cefGDDHzkToGRGDsy24f/Njrz7EHP56jQ8mlDcjAPO7vkfTDeoBDIfmF7PZtpfzDdooafQmEUJMDU2F7FQ==}
+
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
@@ -1516,6 +1525,13 @@ packages:
     engines: {node: ^14.17.0 || >=16.0.0}
     peerDependencies:
       eslint: '>=6.0.0'
+
+  vue-konva@3.1.2:
+    resolution: {integrity: sha512-/CyZSZjmKNED3Pt4XJFmAwv2PAYKBN1X/6AkYKIj+zSnJGnRZ17S+0Q+UzMgziyZ9Qg6yb25ol8XvkAJckHOCA==}
+    engines: {node: '>= 4.0.0', npm: '>= 3.0.0'}
+    peerDependencies:
+      konva: '>7'
+      vue: ^3
 
   vue-router@4.4.5:
     resolution: {integrity: sha512-4fKZygS8cH1yCyuabAXGUAsyi1b2/o/OKgu/RUb+znIYOxPRxdkytJEx+0wGcpBE1pX6vUgh5jwWOKRGvuA/7Q==}
@@ -2629,6 +2645,8 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
+  konva@9.3.16: {}
+
   levn@0.4.1:
     dependencies:
       prelude-ls: 1.2.1
@@ -3103,6 +3121,11 @@ snapshots:
       semver: 7.6.3
     transitivePeerDependencies:
       - supports-color
+
+  vue-konva@3.1.2(konva@9.3.16)(vue@3.5.12):
+    dependencies:
+      konva: 9.3.16
+      vue: 3.5.12
 
   vue-router@4.4.5(vue@3.5.12):
     dependencies:

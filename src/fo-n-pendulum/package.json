@@ -10,9 +10,11 @@
     "dependencies": {
         "@mdi/font": "7.4.47",
         "core-js": "^3.37.1",
+        "konva": "^9.3.16",
         "pinia": "^2.2.6",
         "roboto-fontface": "*",
         "vue": "^3.4.31",
+        "vue-konva": "^3.1.2",
         "vuetify": "^3.6.11"
     },
     "devDependencies": {

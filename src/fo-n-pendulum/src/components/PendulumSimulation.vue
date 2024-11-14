@@ -1,8 +1,8 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import SimulationRenderer from './SimulationRenderer.vue'
-const width = ref(0)
-const height = ref(0)
+const width = ref(10)
+const height = ref(10)
 
 const container = ref(null)
 const resizeObserver = ref(

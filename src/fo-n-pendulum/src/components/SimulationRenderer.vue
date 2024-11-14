@@ -1,12 +1,15 @@
 <script setup>
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { usePendulumStore } from '@/stores/pendulum'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useTheme } from 'vuetify'
+import Konva from 'konva'
 
 const props = defineProps(['width', 'height'])
-const canvas = ref(null)
-const animationLoop = ref(null)
 const theme = useTheme()
+
+const layer = ref(null)
+let animation = null
+let backgroundCanvas = null
 
 const pendulum = usePendulumStore()
 
@@ -18,59 +21,41 @@ const scale = computed(
 ) // pixels per meter
 
 onMounted(() => {
-    const animate = (timestamp) => {
-        render(timestamp)
+    backgroundCanvas = document.createElement('canvas')
 
-        animationLoop.value = requestAnimationFrame(animate)
-    }
-    animationLoop.value = requestAnimationFrame(animate)
+    animation = new Konva.Animation((frame) => {
+        render(frame.timeDiff / 1000)
+    }, layer.value.getNode())
+    animation.start()
 })
 
 onBeforeUnmount(() => {
-    cancelAnimationFrame(animationLoop.value)
+    animation.stop()
 })
 
-const translateCoordinates = ([x, y]) => {
-    const displayX = x * scale.value + props.width / 2
-    const displayY = y * scale.value + props.height / 2
-
-    return [displayX, displayY]
-}
-
-const translateLength = (length) => {
-    return length * scale.value
-}
-
-const renderCircle = ([x, y], radius, color, ctx) => {
-    const [renderX, renderY] = translateCoordinates([x, y])
-    const renderRadius = translateLength(radius)
-
-    ctx.strokeStyle = 'transparent'
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.arc(renderX, renderY, renderRadius, 0, 2 * Math.PI, false)
-    ctx.fill()
-    ctx.stroke()
-}
+const translateX = (x) => x * scale.value + props.width / 2
+const translateY = (y) => y * scale.value + props.height / 2
+const translateLength = (length) => length * scale.value
 
 const renderLine = (point1, point2, width, color, ctx) => {
-    const renderPoint1 = translateCoordinates(point1)
-    const renderPoint2 = translateCoordinates(point2)
+    const renderX1 = translateX(point1[0])
+    const renderY1 = translateX(point1[1])
+    const renderX2 = translateX(point2[0])
+    const renderY2 = translateX(point2[1])
     const renderWidth = translateLength(width)
 
     ctx.strokeStyle = color
     ctx.lineWidth = renderWidth
     ctx.beginPath()
-    ctx.moveTo(renderPoint1[0], renderPoint1[1])
-    ctx.lineTo(renderPoint2[0], renderPoint2[1])
+    ctx.moveTo(renderX1, renderY1)
+    ctx.lineTo(renderX2, renderY2)
     ctx.stroke()
 }
 
-const render = (timestamp) => {
-    const ctx = canvas.value.getContext('2d')
-
-    ctx.clearRect(0, 0, canvas.value.width, canvas.value.height)
-
+const render = (delta) => {
+    backgroundCanvas.width = props.width
+    backgroundCanvas.height = props.height
+    let ctx = backgroundCanvas.getContext('2d')
     // render trace
     for (let j = 0; j < pendulum.position.length; j++) {
         for (let i = 1; i < pendulum.trace.length; i++) {
@@ -84,38 +69,51 @@ const render = (timestamp) => {
         }
     }
 
-    // render pendulum
-    for (let i = 1; i < pendulum.position.length; i++) {
-        renderLine(
-            pendulum.position[i - 1],
-            pendulum.position[i],
-            0.01,
-            'white',
-            ctx
-        )
-        renderCircle(
-            pendulum.position[i - 1],
-            0.02,
-            theme.current.value.colors.secondary,
-            ctx
-        )
-    }
-    renderCircle(
-        pendulum.position[pendulum.position.length - 1],
-        0.02,
-        theme.current.value.colors.secondary,
-        ctx
-    )
-
     // updating test
-    pendulum.tick(timestamp)
+    pendulum.tick(delta)
 }
 </script>
 <template>
-    <canvas
-        :width="props.width"
-        :height="props.height"
-        ref="canvas"
-        class="canvas"
-    />
+    <konva-stage
+        :config="{
+            width: props.width,
+            height: props.height,
+        }"
+    >
+        <konva-layer ref="layer">
+            <konva-image
+                :config="{
+                    image: backgroundCanvas,
+                }"
+            />
+            <konva-line
+                :config="{
+                    x: 0,
+                    y: 0,
+                    points: pendulum.position.reduce(
+                        (prev, curr) => [
+                            ...prev,
+                            translateX(curr[0]),
+                            translateY(curr[1]),
+                        ],
+                        []
+                    ),
+                    stroke: theme.current.value.colors.secondary,
+                    strokeWidth: translateLength(0.02),
+                    lineJoin: 'bevel',
+                }"
+            />
+            <konva-circle
+                v-for="(position, i) in pendulum.position"
+                :key="i"
+                :config="{
+                    x: translateX(position[0]),
+                    y: translateY(position[1]),
+                    radius: translateLength(0.02),
+                    fill: 'white',
+                    stroke: 'transparent',
+                }"
+            />
+        </konva-layer>
+    </konva-stage>
 </template>

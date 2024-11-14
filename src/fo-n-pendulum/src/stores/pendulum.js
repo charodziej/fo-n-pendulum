@@ -11,8 +11,6 @@ export const usePendulumStore = defineStore('pendulum', () => {
     const trace = ref([])
     const traceLimit = ref(300)
 
-    let lastTimestamp = null
-
     const position = computed(() => {
         const result = [[0, 0]]
         let x = 0
@@ -48,13 +46,8 @@ export const usePendulumStore = defineStore('pendulum', () => {
         }
     }
 
-    const tick = (timestamp) => {
-        if (lastTimestamp) {
-            const timeDelta = timestamp - lastTimestamp
-
-            simulationTick(timeDelta / 1000)
-        }
-        lastTimestamp = timestamp
+    const tick = (delta) => {
+        simulationTick(delta)
     }
 
     return {
