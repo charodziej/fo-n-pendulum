@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, toRaw } from 'vue'
 import { usePendulumStore } from '@/stores/pendulum'
 import { useTheme } from 'vuetify'
 import Konva from 'konva'
@@ -12,6 +12,8 @@ let animation = null
 let backgroundCanvas = null
 
 const pendulum = usePendulumStore()
+const doAnimate = ref(true)
+let startAnimationTimeout = null
 
 const displayAreaSize = computed(
     () => 2 * (pendulum.links + 1) * pendulum.armLength
@@ -38,17 +40,11 @@ const translateY = (y) => y * scale.value + props.height / 2
 const translateLength = (length) => length * scale.value
 
 const renderLine = (point1, point2, width, color, ctx) => {
-    const renderX1 = translateX(point1[0])
-    const renderY1 = translateX(point1[1])
-    const renderX2 = translateX(point2[0])
-    const renderY2 = translateX(point2[1])
-    const renderWidth = translateLength(width)
-
     ctx.strokeStyle = color
-    ctx.lineWidth = renderWidth
+    ctx.lineWidth = width
     ctx.beginPath()
-    ctx.moveTo(renderX1, renderY1)
-    ctx.lineTo(renderX2, renderY2)
+    ctx.moveTo(point1[0], point1[1])
+    ctx.lineTo(point2[0], point2[1])
     ctx.stroke()
 }
 
@@ -56,21 +52,64 @@ const render = (delta) => {
     backgroundCanvas.width = props.width
     backgroundCanvas.height = props.height
     let ctx = backgroundCanvas.getContext('2d')
+
     // render trace
-    for (let j = 0; j < pendulum.position.length; j++) {
-        for (let i = 1; i < pendulum.trace.length; i++) {
-            renderLine(
-                pendulum.trace[i - 1][j],
-                pendulum.trace[i][j],
-                (0.002 * i) / pendulum.trace.length,
-                `rgba(255,${255 * (1 - j / pendulum.position.length)},${100 + 155 * (1 - j / pendulum.position.length)},${i / pendulum.trace.length})`,
-                ctx
-            )
+    if (pendulum.trace.length > 0) {
+        //
+        const scaleTmp = toRaw(scale.value)
+        const widthTmp = toRaw(props.width)
+        const heightTmp = toRaw(props.height)
+        const traceTmp = toRaw(pendulum.trace)
+        const linkCount = toRaw(pendulum.links)
+        for (let j = 1; j < linkCount + 1; j++) {
+            let lastPoint = [
+                traceTmp[0][j][0] * scaleTmp + widthTmp / 2,
+                traceTmp[0][j][1] * scaleTmp + heightTmp / 2,
+            ]
+            for (let i = 1; i < traceTmp.length; i++) {
+                let currentPoint = [
+                    traceTmp[i][j][0] * scaleTmp + widthTmp / 2,
+                    traceTmp[i][j][1] * scaleTmp + heightTmp / 2,
+                ]
+                let width = ((0.002 * i) / traceTmp.length) * scaleTmp
+                renderLine(
+                    lastPoint,
+                    currentPoint,
+                    width,
+                    `rgba(255,${255 * (1 - j / linkCount)},${100 + 155 * (1 - j / linkCount)},${i / traceTmp.length})`,
+                    ctx
+                )
+                lastPoint = currentPoint
+            }
         }
     }
 
-    // updating test
-    pendulum.tick(delta)
+    if (doAnimate.value) pendulum.tick(delta)
+    pendulum.updateTrace()
+}
+
+const dragStart = () => {
+    doAnimate.value = false
+    if (startAnimationTimeout) {
+        clearTimeout(startAnimationTimeout)
+        startAnimationTimeout = null
+    }
+}
+const dragMove = (index, event) => {
+    const x = (event.target.attrs.x - props.width / 2) / scale.value
+    const y = (event.target.attrs.y - props.height / 2) / scale.value
+
+    pendulum.fabrikMove(index, x, y)
+    event.target.setAbsolutePosition({
+        x: translateX(pendulum.position[index][0]),
+        y: translateY(pendulum.position[index][1]),
+    })
+}
+const dragEnd = () => {
+    startAnimationTimeout = setTimeout(() => {
+        doAnimate.value = true
+        startAnimationTimeout = null
+    }, 2000)
 }
 </script>
 <template>
@@ -112,7 +151,11 @@ const render = (delta) => {
                     radius: translateLength(0.02),
                     fill: 'white',
                     stroke: 'transparent',
+                    draggable: i !== 0,
                 }"
+                @dragstart="(event) => dragStart(i, event)"
+                @dragmove="(event) => dragMove(i, event)"
+                @dragend="(event) => dragEnd(i, event)"
             />
         </konva-layer>
     </konva-stage>
