@@ -12,7 +12,7 @@ let animation = null
 let backgroundCanvas = null
 
 const pendulum = usePendulumStore()
-const doAnimate = ref(true)
+const doAnimate = ref(false)
 let startAnimationTimeout = null
 
 const displayAreaSize = computed(
@@ -71,11 +71,10 @@ const render = (delta) => {
                     traceTmp[i][j][0] * scaleTmp + widthTmp / 2,
                     traceTmp[i][j][1] * scaleTmp + heightTmp / 2,
                 ]
-                let width = ((0.002 * i) / traceTmp.length) * scaleTmp
                 renderLine(
                     lastPoint,
                     currentPoint,
-                    width,
+                    2,
                     `rgba(255,${255 * (1 - j / linkCount)},${100 + 155 * (1 - j / linkCount)},${i / traceTmp.length})`,
                     ctx
                 )
