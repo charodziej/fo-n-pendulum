@@ -3,7 +3,7 @@ import { ref, computed, watch, toRaw } from 'vue'
 import * as math from 'mathjs'
 
 export const usePendulumStore = defineStore('pendulum', () => {
-    const links = ref(2)
+    const links = ref(5)
     const armLength = ref(0.1)
     const gravConstant = ref(9.8)
 
@@ -12,6 +12,9 @@ export const usePendulumStore = defineStore('pendulum', () => {
 
     const trace = ref([])
     const traceLimit = ref(500)
+    const traceType = ref('all')
+
+    const doAnimate = ref(false)
 
     const position = computed({
         get() {
@@ -46,6 +49,7 @@ export const usePendulumStore = defineStore('pendulum', () => {
         () => {
             angles.value = new Array(links.value).fill(0)
             angularVelocities.value = new Array(links.value).fill(0)
+            trace.value = []
         },
         { immediate: true }
     )
@@ -147,15 +151,16 @@ export const usePendulumStore = defineStore('pendulum', () => {
         angularVelocities.value = newValues[1]
     }
 
-    const tick = (delta) => {
-        simulationTick(delta)
-    }
-
     const updateTrace = () => {
         trace.value.push(toRaw(position.value))
-        if (trace.value.length > traceLimit.value) {
+        while (trace.value.length > traceLimit.value) {
             trace.value.shift()
         }
+    }
+
+    const tick = (delta) => {
+        if (doAnimate.value) simulationTick(Math.min(0.02, delta))
+        updateTrace()
     }
 
     const fabrikMove = (index, x, y) => {
@@ -191,15 +196,19 @@ export const usePendulumStore = defineStore('pendulum', () => {
         forward()
 
         position.value = positions
+        angularVelocities.value = new Array(links.value).fill(0)
     }
 
     return {
         links,
         armLength,
         position,
-        angle: angles,
-        angularVelocity: angularVelocities,
+        angles,
+        angularVelocities,
         trace,
+        traceLimit,
+        traceType,
+        doAnimate,
         tick,
         updateTrace,
         fabrikMove,

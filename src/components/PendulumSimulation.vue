@@ -1,6 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import SimulationRenderer from './SimulationRenderer.vue'
+import { usePendulumStore } from '@/stores/pendulum'
 const width = ref(10)
 const height = ref(10)
 
@@ -20,6 +21,8 @@ const resizeObserver = ref(
     })
 )
 
+const pendulum = usePendulumStore()
+
 onMounted(() => {
     if (container.value) {
         resizeObserver.value.observe(container.value)
@@ -34,21 +37,64 @@ onBeforeUnmount(() => {
 
 <template>
     <v-container class="fill-height">
-        <v-responsive
-            class="align-center justify-center fill-height mx-auto flex-shrink-1"
-        >
-            <v-sheet class="container pa-2">
-                <div
-                    style="width: 100%; height: 100%"
-                    ref="container"
+        <v-row>
+            <v-col>
+                <v-sheet class="container pa-2">
+                    <div
+                        style="width: 100%; height: 100%"
+                        ref="container"
+                    >
+                        <SimulationRenderer
+                            :width="width"
+                            :height="height"
+                        />
+                    </div>
+                </v-sheet>
+            </v-col>
+            <v-col
+                cols="4"
+                style="min-width: 500px"
+            >
+                <v-sheet
+                    class="flex-grow pa-8"
+                    style="height: 100%"
                 >
-                    <SimulationRenderer
-                        :width="width"
-                        :height="height"
-                    />
-                </div>
-            </v-sheet>
-        </v-responsive>
+                    <v-switch
+                        v-model="pendulum.doAnimate"
+                        color="primary"
+                        label="Animate"
+                    ></v-switch>
+
+                    <div>Pendulum links</div>
+                    <v-slider
+                        v-model="pendulum.links"
+                        color="primary"
+                        step="1"
+                        min="1"
+                        max="10"
+                        show-ticks
+                        thumb-label
+                    ></v-slider>
+
+                    <div>Trace length</div>
+                    <v-slider
+                        v-model="pendulum.traceLimit"
+                        color="primary"
+                        step="10"
+                        min="0"
+                        max="500"
+                        show-ticks
+                        thumb-label
+                    ></v-slider>
+
+                    <v-select
+                        v-model="pendulum.traceType"
+                        label="Trace type"
+                        :items="['none', 'tip', 'all']"
+                    ></v-select>
+                </v-sheet>
+            </v-col>
+        </v-row>
     </v-container>
 </template>
 

@@ -12,8 +12,6 @@ let animation = null
 let backgroundCanvas = null
 
 const pendulum = usePendulumStore()
-const doAnimate = ref(false)
-let startAnimationTimeout = null
 
 const displayAreaSize = computed(
     () => 2 * (pendulum.links + 1) * pendulum.armLength
@@ -54,14 +52,15 @@ const render = (delta) => {
     let ctx = backgroundCanvas.getContext('2d')
 
     // render trace
-    if (pendulum.trace.length > 0) {
-        //
+    if (pendulum.trace.length > 0 && pendulum.traceType !== 'none') {
         const scaleTmp = toRaw(scale.value)
         const widthTmp = toRaw(props.width)
         const heightTmp = toRaw(props.height)
         const traceTmp = toRaw(pendulum.trace)
         const linkCount = toRaw(pendulum.links)
         for (let j = 1; j < linkCount + 1; j++) {
+            if (pendulum.traceType === 'tip' && j !== linkCount) continue
+
             let lastPoint = [
                 traceTmp[0][j][0] * scaleTmp + widthTmp / 2,
                 traceTmp[0][j][1] * scaleTmp + heightTmp / 2,
@@ -83,16 +82,11 @@ const render = (delta) => {
         }
     }
 
-    if (doAnimate.value) pendulum.tick(delta)
-    pendulum.updateTrace()
+    pendulum.tick(delta)
 }
 
 const dragStart = () => {
-    doAnimate.value = false
-    if (startAnimationTimeout) {
-        clearTimeout(startAnimationTimeout)
-        startAnimationTimeout = null
-    }
+    pendulum.doAnimate = false
 }
 const dragMove = (index, event) => {
     const x = (event.target.attrs.x - props.width / 2) / scale.value
@@ -103,12 +97,6 @@ const dragMove = (index, event) => {
         x: translateX(pendulum.position[index][0]),
         y: translateY(pendulum.position[index][1]),
     })
-}
-const dragEnd = () => {
-    startAnimationTimeout = setTimeout(() => {
-        doAnimate.value = true
-        startAnimationTimeout = null
-    }, 2000)
 }
 </script>
 <template>
@@ -154,7 +142,6 @@ const dragEnd = () => {
                 }"
                 @dragstart="(event) => dragStart(i, event)"
                 @dragmove="(event) => dragMove(i, event)"
-                @dragend="(event) => dragEnd(i, event)"
             />
         </konva-layer>
     </konva-stage>
