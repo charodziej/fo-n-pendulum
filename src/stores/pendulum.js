@@ -10,11 +10,17 @@ export const usePendulumStore = defineStore('pendulum', () => {
     const angles = ref([])
     const angularVelocities = ref([])
 
+    const phasePortrait = ref({
+        angles: [0],
+        velocities: [0],
+    })
+
     const trace = ref([])
     const traceLimit = ref(500)
     const traceType = ref('all')
 
     const doAnimate = ref(false)
+    const displayMode = ref('pendulum')
 
     const position = computed({
         get() {
@@ -50,6 +56,10 @@ export const usePendulumStore = defineStore('pendulum', () => {
             angles.value = new Array(links.value).fill(0)
             angularVelocities.value = new Array(links.value).fill(0)
             trace.value = []
+            phasePortrait.value = {
+                angles: [0],
+                velocities: [0],
+            }
         },
         { immediate: true }
     )
@@ -156,6 +166,15 @@ export const usePendulumStore = defineStore('pendulum', () => {
         while (trace.value.length > traceLimit.value) {
             trace.value.shift()
         }
+
+        phasePortrait.value.angles.push(angles.value.at(-1) % Math.PI)
+        while (phasePortrait.value.angles.length > traceLimit.value) {
+            phasePortrait.value.angles.shift()
+        }
+        phasePortrait.value.velocities.push(angularVelocities.value.at(-1))
+        while (phasePortrait.value.velocities.length > traceLimit.value) {
+            phasePortrait.value.velocities.shift()
+        }
     }
 
     const tick = (delta) => {
@@ -209,6 +228,9 @@ export const usePendulumStore = defineStore('pendulum', () => {
         traceLimit,
         traceType,
         doAnimate,
+        phasePortrait,
+        displayMode,
+        gravConstant,
         tick,
         updateTrace,
         fabrikMove,

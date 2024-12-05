@@ -45,6 +45,12 @@ onBeforeUnmount(() => {
                         ref="container"
                     >
                         <SimulationRenderer
+                            v-if="pendulum.displayMode === 'pendulum'"
+                            :width="width"
+                            :height="height"
+                        />
+                        <PortraitRenderer
+                            v-if="pendulum.displayMode === 'portrait'"
                             :width="width"
                             :height="height"
                         />
@@ -63,6 +69,20 @@ onBeforeUnmount(() => {
                         v-model="pendulum.doAnimate"
                         color="primary"
                         label="Animate"
+                    ></v-switch>
+
+                    <v-switch
+                        :modelValue="pendulum.displayMode === 'portrait'"
+                        @update:modelValue="
+                            () => {
+                                pendulum.displayMode =
+                                    pendulum.displayMode === 'portrait'
+                                        ? 'pendulum'
+                                        : 'portrait'
+                            }
+                        "
+                        color="primary"
+                        label="Show portrait"
                     ></v-switch>
 
                     <div>Pendulum links</div>
@@ -92,6 +112,15 @@ onBeforeUnmount(() => {
                         label="Trace type"
                         :items="['none', 'tip', 'all']"
                     ></v-select>
+
+                    <div>Gravity</div>
+                    <v-slider
+                        v-model="pendulum.gravConstant"
+                        color="primary"
+                        min="0"
+                        max="30"
+                        thumb-label
+                    ></v-slider>
                 </v-sheet>
             </v-col>
         </v-row>
