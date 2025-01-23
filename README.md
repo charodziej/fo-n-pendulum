@@ -54,6 +54,7 @@ Aplikacja została skonstruowana w taki sposób, że cały silnik fizyki znajduj
 Cała symulacja wahadła opiera się na użyciu równania Eulera-Lagrange'a do uzyskania równań ruchu. Aby użyć równania Eulera-Lagrange'a, trzeba zrobić dwie rzeczy.
 
 Po pierwsze, trzeba opisać cały układ używając jakiejś zmiennej i pochodnej po czasie tej zmiennej. W tym przypadku posłużymy się kątem odchylenia danego węzła od pionu. Takie rozwiązanie dobrze generalizuje się dla n węzłów, gdyż możemy wtedy otrzymać położenie każdego węzła za pomocą prostej sumy:
+
 $$
 x_i = \sum_{j=1}^i\sin\phi_j
 $$
@@ -62,6 +63,7 @@ y_i = -\sum_{j=1}^i\cos\phi_j
 $$
 
 Po drugie, należy policzyć Lagrangian układu. Wzór na Lagrangian to
+
 $$
 L = T - V
 $$
@@ -71,10 +73,13 @@ gdzie $T$ to energia kinetyczna układu, a $V$ to energia potencjalna. Wzory na 
 $$
 T = \frac{1}{2}\sum_{i=1}^n m_i v_i^2
 $$
+
 $$
  V = \sum_{i=1}^nm_igy_i
 $$
+
 Po wyliczeniu Lagrangianu możemy podstawić go pod równanie Eulera-Lagrange'a:
+
 $$
 \frac{d}{dt}\left(\frac{\partial L}{\partial \dot{\theta}_i}\right) - \frac{\partial L}{\partial \theta_i} = 0
 $$
@@ -82,7 +87,7 @@ $$
 Po wielu przekształceniach dostajemy następujące równanie:
 
 $$
-\sum_{j=1}^{n}c(i,j)\ddot{\phi}_j\cos(\phi_{i} - \phi_j) = -\sum_{j=1}^{n}\left[c(i,j)\dot{\phi}_j^2\sin(\phi_i - \phi_j)\right] - g(n - i + 1)\sin\phi_i
+\sum_{j=1}^{n}c(i,j)\ddot{\phi_j}\cos(\phi_{i} - \phi_j) = -\sum_{j=1}^{n}\left[c(i,j)\dot{\phi}_j^2\sin(\phi_i - \phi_j)\right] - g(n - i + 1)\sin\phi_i
 $$
 
 Jako że stan naszego układu jest opisywany przez kąty odchylenia węzłów od pionu oraz prędkości kątowe węzłów, to możemy dzięki temu równaniu wyliczyć przyspieszenia kątowe. To z kolei pozwala nam wyliczyć nowe prędkości kątowe i nowe kąty odchylenia, co daje nam nowy stan układu. Powyższe równanie można potraktować jak równanie macierzowe, gdzie lewa strona to macierz $A$, wektor przyspieszeń kątowych to $x$, a prawa strona to wektor wynikowy - $b$.
