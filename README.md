@@ -1,80 +1,103 @@
-# Vuetify (Default)
+## Autorzy
 
-This is the official scaffolding tool for Vuetify, designed to give you a head start in building your new Vuetify application. It sets up a base template with all the necessary configurations and standard directory structure, enabling you to begin development without the hassle of setting up the project from scratch.
+**Adam Jeliński** - kod odpowiedzialny za UI
 
-## ❗️ Important Links
+**Miłosz Mizak** - matematyka i silnik fizyczny
 
--   📄 [Docs](https://vuetifyjs.com/)
--   🚨 [Issues](https://issues.vuetifyjs.com/)
--   🏬 [Store](https://store.vuetifyjs.com/)
--   🎮 [Playground](https://play.vuetifyjs.com/)
--   💬 [Discord](https://community.vuetifyjs.com)
+## Link do wersji online
 
-## 💿 Install
+[https://charodziej.github.io/fo-n-pendulum/](https://charodziej.github.io/fo-n-pendulum/)
 
-Set up your project using your preferred package manager. Use the corresponding command to install the dependencies:
+## Cel projektu
 
-| Package Manager                                           | Command        |
-| --------------------------------------------------------- | -------------- |
-| [yarn](https://yarnpkg.com/getting-started)               | `yarn install` |
-| [npm](https://docs.npmjs.com/cli/v7/commands/npm-install) | `npm install`  |
-| [pnpm](https://pnpm.io/installation)                      | `pnpm install` |
-| [bun](https://bun.sh/#getting-started)                    | `bun install`  |
+Celem projektu było zbudowanie symulacji n-stopniowego wahadła, a więc takiego wahadła gdzie użytkownik może dowolnie modyfikować liczbę kulek. Oprócz tego użytkownik ma także możliwość modyfikacji siły grawitacji, co pozwala sprawdzić jak takie wahadło zachowywałoby się np. na Księżycu.
 
-After completing the installation, your environment is ready for Vuetify development.
+## Strona wizualna
 
-## ✨ Features
+![widok aplikacji](image.png)
 
--   🖼️ **Optimized Front-End Stack**: Leverage the latest Vue 3 and Vuetify 3 for a modern, reactive UI development experience. [Vue 3](https://v3.vuejs.org/) | [Vuetify 3](https://vuetifyjs.com/en/)
--   🗃️ **State Management**: Integrated with [Pinia](https://pinia.vuejs.org/), the intuitive, modular state management solution for Vue.
--   🚦 **Routing and Layouts**: Utilizes Vue Router for SPA navigation and vite-plugin-vue-layouts for organizing Vue file layouts. [Vue Router](https://router.vuejs.org/) | [vite-plugin-vue-layouts](https://github.com/JohnCampionJr/vite-plugin-vue-layouts)
--   ⚡ **Next-Gen Tooling**: Powered by Vite, experience fast cold starts and instant HMR (Hot Module Replacement). [Vite](https://vitejs.dev/)
--   🧩 **Automated Component Importing**: Streamline your workflow with unplugin-vue-components, automatically importing components as you use them. [unplugin-vue-components](https://github.com/antfu/unplugin-vue-components)
+Na powyższym obrazku przedstawiony jest widok użytkownika. Po lewej stronie znajduje się symulacja wahadła z podaną ilością węzłów. Po prawej stronie znajduje się panel sterowania z następującymi opcjami:
+- **Animate** - naciśnięcie tego przełącznika rozpoczyna symulację. Dzięki możliwości zatrzymania symulacji użytkownik może wcześniej ustawić wahadło w dogodnej dla siebie pozycji.
+- **Show portrait** - ta opcja podmienia widok symulacji na widok portretu fazowego.
+- **Pendulum links** - tutaj można ustawić, ile węzłów ma zawierać wahadło.
+- **Trace length** - ta opcja zmienia długość śladu pozostawianego przez każdy z węzłów.
+- **Trace type** - w aplikacji dostępne są trzy rodzaje śladów - pełny (all), tylko dla ostatniego węzła (tip) lub brak śladu (none).
+- **Gravity** - suwak pozwalający na zmianę wartości grawitacji.
 
-These features are curated to provide a seamless development experience from setup to deployment, ensuring that your Vuetify application is both powerful and maintainable.
+## Implementacja
 
-## 💡 Usage
+Aplikacja została napisana w całości w języku JavaScript, z użyciem biblioteki Vue. Biblioteka została użyta do stworzenia całego UI aplikacji. Dzięki takiej implementacji aplikacja może działać w przeglądarce, co jest bardzo wygodne, gdyż dzięki temu można uruchomić symulację także na telefonach.
 
-This section covers how to start the development server and build your project for production.
+Do zarządzania stanem aplikacji wykorzystana jest biblioteka pinia, a do rysowania użyliśmy biblioteki konva. W celu uproszczenia operacji matematycznych korzystamy z mathjs.
 
-### Starting the Development Server
+### UI
 
-To start the development server with hot-reload, run the following command. The server will be accessible at [http://localhost:3000](http://localhost:3000):
+Kod podzielony jest na 4 segmenty:
 
-```bash
-yarn dev
+- `stores/pendulum.js` - pinia store zajmujący się całym stanem aplikacji, przechowuje aktualne ułożenie wahadła, jego historię oraz zajmuje się aktualizacją tego stanu.
+- `components/SimulationRenderer.vue` - wyświetla symulację wahadła
+- `components/PortraitRenderer.vue` - wyświetla portret fazowy
+- `components/PendulumSimulation.vue` - wyświetla odpowiedni renderer oraz menu do konfiguracji symulacji
+
+Główny stan wahadła dla symulacji jest opisany poprzez kąty i prędkości kątowe. Wartości te są automatycznie konwertowane na pozycje węzłów wahadła w celu uproszczenia wyświetlania (wartość `position`). 
+
+W celu umożliwienia poruszania wahadłem stworzyliśmy prostą implementację algorytmu fabrik (forward and backward inverse kinematics). Dzięki temu można ciągnąć za dowolny element wahadła i pozostałe są automatycznie dostosowane (funkcja `fabrikMove`).
+
+Cała symulacja fizyczna jest wykonywana wewnątrz funkcji `simulationTick`.
+
+W celu optymalizacji procesu wyświetlania wahadła i jego śladu wiele danych jest kopiowane funkcją `toRaw`. To bardzo znacząco przyspieszyło symulację i wyświetlanie.
+
+### Silnik fizyczny
+
+Aplikacja została skonstruowana w taki sposób, że cały silnik fizyki znajduje się w jednym pliku pod nazwą *pendulum.js*. 
+
+Cała symulacja wahadła opiera się na użyciu równania Eulera-Lagrange'a do uzyskania równań ruchu. Aby użyć równania Eulera-Lagrange'a, trzeba zrobić dwie rzeczy.
+
+Po pierwsze, trzeba opisać cały układ używając jakiejś zmiennej i pochodnej po czasie tej zmiennej. W tym przypadku posłużymy się kątem odchylenia danego węzła od pionu. Takie rozwiązanie dobrze generalizuje się dla n węzłów, gdyż możemy wtedy otrzymać położenie każdego węzła za pomocą prostej sumy:
+$$
+x_i = \sum_{j=1}^i\sin\phi_j
+$$
+$$
+y_i = -\sum_{j=1}^i\cos\phi_j
+$$
+
+Po drugie, należy policzyć Lagrangian układu. Wzór na Lagrangian to
+$$
+L = T - V
+$$
+
+gdzie $T$ to energia kinetyczna układu, a $V$ to energia potencjalna. Wzory na te energie prezentują się następująco:
+
+$$
+T = \frac{1}{2}\sum_{i=1}^n m_i v_i^2
+$$
+$$
+ V = \sum_{i=1}^nm_igy_i
+$$
+Po wyliczeniu Lagrangianu możemy podstawić go pod równanie Eulera-Lagrange'a:
+$$
+\frac{d}{dt}\left(\frac{\partial L}{\partial \dot{\theta}_i}\right) - \frac{\partial L}{\partial \theta_i} = 0
+$$
+
+Po wielu przekształceniach dostajemy następujące równanie:
+
+$$
+\sum_{j=1}^{n}c(i,j)\ddot{\phi}_j\cos(\phi_{i} - \phi_j) = -\sum_{j=1}^{n}\left[c(i,j)\dot{\phi}_j^2\sin(\phi_i - \phi_j)\right] - g(n - i + 1)\sin\phi_i
+$$
+
+Jako że stan naszego układu jest opisywany przez kąty odchylenia węzłów od pionu oraz prędkości kątowe węzłów, to możemy dzięki temu równaniu wyliczyć przyspieszenia kątowe. To z kolei pozwala nam wyliczyć nowe prędkości kątowe i nowe kąty odchylenia, co daje nam nowy stan układu. Powyższe równanie można potraktować jak równanie macierzowe, gdzie lewa strona to macierz $A$, wektor przyspieszeń kątowych to $x$, a prawa strona to wektor wynikowy - $b$.
+
+Koniecznym jest zastosowanie tutaj metod numerycznych. Niestety zwykła metoda Eulera jest tutaj niewystarczająca. Zamiast niej posłużyliśmy się metodą Runge-Kutta (RK4). 
+
+### Instrukcja instalacji projektu
+
+1. Instalujemy Node.js używając **nvm** oraz **pnpm**, korzystając z tej strony: [https://nodejs.org/en/download/package-manager](https://nodejs.org/en/download/package-manager "https://nodejs.org/en/download/package-manager")
+2. Pobieramy kod i wchodzimy do głównego katalogu
+3. Wykonujemy dwie komendy:
+
+```
+$ pnpm install
+$ pnpm run dev
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
-
-> Add NODE_OPTIONS='--no-warnings' to suppress the JSON import warnings that happen as part of the Vuetify import mapping. If you are on Node [v21.3.0](https://nodejs.org/en/blog/release/v21.3.0) or higher, you can change this to NODE_OPTIONS='--disable-warning=5401'. If you don't mind the warning, you can remove this from your package.json dev script.
-
-### Building for Production
-
-To build your project for production, use:
-
-```bash
-yarn build
-```
-
-(Repeat for npm, pnpm, and bun with respective commands.)
-
-Once the build process is completed, your application will be ready for deployment in a production environment.
-
-## 💪 Support Vuetify Development
-
-This project is built with [Vuetify](https://vuetifyjs.com/en/), a UI Library with a comprehensive collection of Vue components. Vuetify is an MIT licensed Open Source project that has been made possible due to the generous contributions by our [sponsors and backers](https://vuetifyjs.com/introduction/sponsors-and-backers/). If you are interested in supporting this project, please consider:
-
--   [Requesting Enterprise Support](https://support.vuetifyjs.com/)
--   [Sponsoring John on Github](https://github.com/users/johnleider/sponsorship)
--   [Sponsoring Kael on Github](https://github.com/users/kaelwd/sponsorship)
--   [Supporting the team on Open Collective](https://opencollective.com/vuetify)
--   [Becoming a sponsor on Patreon](https://www.patreon.com/vuetify)
--   [Becoming a subscriber on Tidelift](https://tidelift.com/subscription/npm/vuetify)
--   [Making a one-time donation with Paypal](https://paypal.me/vuetify)
-
-## 📑 License
-
-[MIT](http://opensource.org/licenses/MIT)
-
-Copyright (c) 2016-present Vuetify, LLC
+Po wykonaniu tych czynności projekt powinien załadować się lokalnie pod adresem `localhost:3000`.
